@@ -39,11 +39,19 @@ while True:
             delta_x = obj_center_x - center_x
 
             if (center_x - 20 <= obj_center_x <= center_x + 20):
-                print("")
-            if (delta_x > 0):
-                Turret.rotateX(-10)
+                pass
+
+            elif (delta_x > 0):
+                if (delta_x < 60):
+                    Turret.rotateX(-1)
+                else:
+                    Turret.rotateX(-10)
+
             elif (delta_x < 0):
-                Turret.rotateX(10)
+                if (delta_x > -60):
+                    Turret.rotateX(1)
+                else:
+                    Turret.rotateX(10)
             
 
     cv2.imshow('frame', frame)
