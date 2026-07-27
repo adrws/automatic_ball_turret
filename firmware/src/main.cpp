@@ -2,69 +2,65 @@
 #include <ArduinoJson.h>
 #include <ESP32Servo.h>
 
-#define DEBUG_LED 2
-#define SERVO1_PIN 33
+#define SERVO_X_PIN 33
+#define SERVO_Y_PIN 32
 
-void blinkLed();
+Servo SERVO_X;
+Servo SERVO_Y;
+
 void parseCommand(String incoming);
-void setServo(String direction, int& current_angle, Servo& SERVO);
+void setServo(int step, Servo& SERVO, int& position);
+void initServo(Servo& SERVO, int SERVO_PIN);
 
-Servo SERVO1;
+int x_position{90};
+int y_position{90};
 
-int current_angle{90};
-
-void setup() 
-{
-    Serial.begin(115200);
-    pinMode(DEBUG_LED, OUTPUT);
-    SERVO1.setPeriodHertz(50);
-    SERVO1.attach(SERVO1_PIN, 500, 2500);
-    SERVO1.write(90);
+void setup() {
+    Serial.begin(921600);
+    initServo(SERVO_X, SERVO_X_PIN);
 }
 
-void loop() 
-{
-    if (Serial.available() > 0) 
-    {
+void loop() {
+    if (Serial.available() > 0) {
         String incoming = Serial.readStringUntil('\n');
         parseCommand(incoming);
     }
 }
 
-void parseCommand(String incoming) 
-{
+void parseCommand(String incoming) {
     JsonDocument json;
-    String direction;
+    String command;
     DeserializationError error = deserializeJson(json, incoming);
 
     if (error) {
         return;
     }
 
-    direction = json["direction"].as<String>();
+    command = json["command"].as<String>();
 
-    setServo(direction, current_angle, SERVO1);
-}
-
-void setServo(String direction, int& current_angle, Servo& SERVO) 
-{
-    if (direction == "center") {
+    if (command == "rotateX") {
+        signed int step = json["step"].as<signed int>();
+        setServo(step, SERVO_X, x_position);
+    }
+    else if (command == "rotateY") {
+        signed int step = json["step"].as<signed int>();
+        setServo(step, SERVO_Y, y_position);
+    }
+    else if (command == "setSpeed") {
         return;
-    }
-    else if (direction == "right") {
-        current_angle = constrain(current_angle + 1, 0, 180);
-        SERVO.write(current_angle);
-    }
-    else if (direction == "left") {
-        current_angle = constrain(current_angle - 1, 0, 180);
-        SERVO.write(current_angle);
+        // TODO: Add the motor speed control.
     }
 }
 
-void blinkLed() 
-{
-    digitalWrite(DEBUG_LED, HIGH);
-    digitalWrite(DEBUG_LED, LOW);
+void setServo(int step, Servo& SERVO, int& position) {
+    position = constrain(position + step, 0, 180);
+    SERVO.write(position);
+}
+
+void initServo(Servo& SERVO, int SERVO_PIN) {
+    SERVO.setPeriodHertz(50);
+    SERVO.attach(SERVO_PIN, 500, 2500);
+    SERVO.write(90);
 }
 
 

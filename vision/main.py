@@ -1,43 +1,19 @@
 import cv2
 from ultralytics import YOLO
-import time
-import json
 import math
-import serial
+from controller import TurretController
 
 camera = cv2.VideoCapture(0)
 base_model = YOLO("yolo26n.pt")
 base_model.export(format="openvino")
 model = YOLO("yolo26n_openvino_model/")
 
-ser = serial.Serial('COM4', 115200, timeout = 1)
+Turret = TurretController("COM4")
 
 camera_width = int(camera.get(cv2.CAP_PROP_FRAME_WIDTH))
 camera_height = int(camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
 center_x = math.floor(camera_width / 2)
 center_y = math.floor(camera_height / 2)
-
-start_time = time.perf_counter()
-end_time = None
-
-def send_command(direction: str):
-    global end_time 
-    global start_time
-    end_time = time.perf_counter()
-    duration = end_time - start_time
-
-    if (duration < 0.0015):
-        return
-    
-    data = {
-        "direction": f"{direction}",
-    }
-    
-    payload = json.dumps(data) + "\n"
-    ser.write(payload.encode('utf-8'))
-    start_time = time.perf_counter()
-    print(f"Direction: {direction}")
-
 
 while True:
     ret, frame = camera.read()
@@ -63,11 +39,11 @@ while True:
             delta_x = obj_center_x - center_x
 
             if (center_x - 20 <= obj_center_x <= center_x + 20):
-                send_command("center")
-            elif (delta_x > 0):
-                send_command("right")
+                print("")
+            if (delta_x > 0):
+                Turret.rotateX(-10)
             elif (delta_x < 0):
-                send_command("left")
+                Turret.rotateX(10)
             
 
     cv2.imshow('frame', frame)
