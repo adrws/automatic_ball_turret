@@ -3,11 +3,18 @@ import sys
 import json
 import time
 from datetime import datetime
-
+from enum import Enum
+class Direction(Enum):
+    left = 1,
+    right = 2
 class TurretController:
     verbose_flag = True
     x_angle = 90
     y_angle = 90
+    right_motor_speed = None
+    left_motor_speed = None
+    prev_right_motor_speed = None
+    prev_left_motor_speed = None
 
     def __init__(self, port: str) -> None:
         print(f"Initializing serial communication on port {port}.")
@@ -34,11 +41,9 @@ class TurretController:
         self.x_angle += step
 
     def setX(self, angle: int):
-        step = angle - self.x_angle
-
         data = {
-            "command": "rotateX",
-            "step" : f"{step}",
+            "command": "setX",
+            "angle" : f"{angle}",
             "timestamp" : datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
@@ -69,15 +74,31 @@ class TurretController:
 
         self.y_angle = angle
 
-    def setSpeed(self, intensity: int):
+    def setSpeed(self, intensity: int, direction: Direction):
         pwm = max(0, min(intensity, 255))
-
+        is_right = direction.name == "right"
+        is_left = direction.name == "left"
+        right_stale_command = pwm == self.prev_right_motor_speed
+        left_stale_command = pwm == self.prev_left_motor_speed
+        
         data = {
         "command": "setSpeed",
-        "step" : f"{pwm}"
+        "motor": f"{direction.name}",
+        "speed" : f"{pwm}",
+        "timestamp" : datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
+        if (is_right and right_stale_command) or (is_left and left_stale_command):
+            return
+        
         self.__sendCommand(data)
+
+        if direction.name == "right":
+            self.prev_right_motor_speed = pwm
+        elif direction.name == "left":
+            self.prev_left_motor_speed = pwm
+
+        time.sleep(0.01)
 
     def setVerbose(self, state: bool):
         self.verbose_flag = state

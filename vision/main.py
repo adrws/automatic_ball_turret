@@ -1,7 +1,7 @@
 import cv2
 from ultralytics import YOLO
 import math
-from controller import TurretController
+from controller import TurretController, Direction
 
 camera = cv2.VideoCapture(0)
 base_model = YOLO("yolo26n.pt")
@@ -38,22 +38,26 @@ while True:
 
             delta_x = obj_center_x - center_x
 
+            if (center_x - 20 <= obj_center_x <= center_x + 20): # TODO: then adjust y angle of turret based on target depth
+                Turret.setSpeed(255, Direction.right)
+                Turret.setSpeed(255, Direction.left)
+            else:
+                Turret.setSpeed(0, Direction.right)
+                Turret.setSpeed(0, Direction.left)
+
             if (center_x - 20 <= obj_center_x <= center_x + 20):
                 pass
-
             elif (delta_x > 0):
-                if (delta_x < 60):
+                if (delta_x < 60): 
                     Turret.rotateX(-1)
                 else:
                     Turret.rotateX(-10)
-
             elif (delta_x < 0):
                 if (delta_x > -60):
                     Turret.rotateX(1)
                 else:
                     Turret.rotateX(10)
             
-
     cv2.imshow('frame', frame)
 
     if cv2.waitKey(1) == ord('q'):
@@ -61,4 +65,3 @@ while True:
 
 camera.release()
 cv2.destroyAllWindows()
-
