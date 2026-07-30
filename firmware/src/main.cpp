@@ -73,6 +73,9 @@ void parseCommand(String incoming) {
             analogWrite(MOTOR_A_PWM, speed);
         }
     }
+    else if (command == "releaseBall") {
+        // TODO: figure out ball release mechanism
+    }
 }
 
 void setServo(int step, Servo& SERVO, int& position) {

@@ -6,11 +6,12 @@ from datetime import datetime
 from enum import Enum
 class Direction(Enum):
     left = 1,
-    right = 2
+    right = 2,
 class TurretController:
     verbose_flag = True
-    x_angle = 90
-    y_angle = 90
+    
+    x_servo_angle = 90
+    y_servo_angle = 90
     right_motor_speed = None
     left_motor_speed = None
     prev_right_motor_speed = None
@@ -28,6 +29,9 @@ class TurretController:
 
         self.command_start_time = time.perf_counter()
         self.command_end_time = None
+        self.ball_release_start_time = time.perf_counter()
+        self.ball_release_end_time = None
+
 
     def rotateX(self, step: int):
         data = {
@@ -38,7 +42,7 @@ class TurretController:
 
         self.__sendCommand(data)
 
-        self.x_angle += step
+        self.x_servo_angle += step
 
     def setX(self, angle: int):
         data = {
@@ -49,20 +53,21 @@ class TurretController:
 
         self.__sendCommand(data)
 
-        self.x_angle = angle
+        self.x_servo_angle = angle
 
     def rotateY(self, step: int):
         data = {
             "command": "rotateY",
-            "step" : f"{step}"
+            "step" : f"{step}",
+            "timestamp" : datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
 
         self.__sendCommand(data)
 
-        self.y_angle += step
+        self.y_servo_angle += step
 
     def setY(self, angle: int):
-        step = angle - self.y_angle
+        step = angle - self.y_servo_angle
 
         data = {
             "command": "rotateY",
@@ -72,7 +77,7 @@ class TurretController:
 
         self.__sendCommand(data)
 
-        self.y_angle = angle
+        self.y_servo_angle = angle
 
     def setSpeed(self, intensity: int, direction: Direction):
         pwm = max(0, min(intensity, 255))
@@ -100,6 +105,20 @@ class TurretController:
 
         time.sleep(0.01)
 
+    def releaseBall(self):
+        self.ball_release_end_time = time.perf_counter()
+        ball_release_delay = self.ball_release_end_time - self.ball_release_start_time
+
+        if ball_release_delay < 1:
+            return
+
+        data = {
+            "command": "releaseBall",
+            "timestamp" : datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        self.__sendCommand(data)
+
     def setVerbose(self, state: bool):
         self.verbose_flag = state
 
@@ -122,6 +141,3 @@ class TurretController:
 
         if self.verbose_flag:
             print(f"Sent: {payload}")
-
-
-
